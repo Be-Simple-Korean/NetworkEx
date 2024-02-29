@@ -4,7 +4,6 @@ import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.example.networkex.model.GithubResponse
 import com.example.networkex.model.UserVO
 import com.example.networkex.repository.GitRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -31,17 +30,15 @@ class MainViewModel @Inject constructor(private val gitRepositoryImpl: GitReposi
             gitRepositoryImpl.getUsers(q)
                 .catch { exception ->
                     Log.e("ERROR!!", exception.message.toString())
-                    emit(
-                        GithubResponse(
-                            total_count = 0,
-                            incomplete_results = false,
-                            items = listOf()
-                        )
-                    )
                 }.collectLatest { response ->
-                    Log.e("response collect","${response.items.toString()}")
-                    inUserList = response.items.toMutableList()
-                    withContext(Dispatchers.Main){
+                    if (response.isSuccessful) {
+                        Log.e("response collect", response.body()?.items.toString())
+                        inUserList = response.body()?.items?.toMutableList()
+                            ?: listOf<UserVO>().toMutableList()
+                    } else {
+                        inUserList = emptyList<UserVO>().toMutableList()
+                    }
+                    withContext(Dispatchers.Main) {
                         _userList.value = inUserList
                     }
                 }
