@@ -10,10 +10,10 @@ import com.example.networkex.repository.GitRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,21 +28,23 @@ class MainViewModel @Inject constructor(private val gitRepositoryImpl: GitReposi
      */
     fun getUsers(q: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            gitRepositoryImpl.getUsers(q).enqueue(object : Callback<GithubResponse> {
-                override fun onResponse(
-                    call: Call<GithubResponse>,
-                    response: Response<GithubResponse>
-                ) {
-                    response.body()?.let { body ->
-                        inUserList = body.items.toMutableList()
+            gitRepositoryImpl.getUsers(q)
+                .catch { exception ->
+                    Log.e("ERROR!!", exception.message.toString())
+                    emit(
+                        GithubResponse(
+                            total_count = 0,
+                            incomplete_results = false,
+                            items = listOf()
+                        )
+                    )
+                }.collectLatest { response ->
+                    Log.e("response collect","${response.items.toString()}")
+                    inUserList = response.items.toMutableList()
+                    withContext(Dispatchers.Main){
                         _userList.value = inUserList
                     }
                 }
-
-                override fun onFailure(call: Call<GithubResponse>, t: Throwable) {
-                    Log.e("onFail", "${t.message.toString()}")
-                }
-            })
         }
     }
 }
