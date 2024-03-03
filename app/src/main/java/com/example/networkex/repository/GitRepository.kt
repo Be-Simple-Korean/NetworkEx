@@ -9,5 +9,5 @@ interface GitRepository {
     /**
      * git hub 유저 조회
      */
-    suspend fun getUsers(q:String) : Flow<Response<GithubResponse>>
+    fun getUsers(q:String) : Flow<Response<GithubResponse>>
 }
