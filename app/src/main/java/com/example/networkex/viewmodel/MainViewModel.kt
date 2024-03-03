@@ -9,6 +9,9 @@ import com.example.networkex.repository.GitRepositoryImpl
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -19,29 +22,28 @@ import javax.inject.Inject
 class MainViewModel @Inject constructor(private val gitRepositoryImpl: GitRepositoryImpl) :
     ViewModel() {
     private var inUserList = mutableListOf<UserVO>()
-    private val _userList = MutableLiveData<List<UserVO>>(emptyList())
-    val userList: LiveData<List<UserVO>> = _userList
+    private val _userList = MutableStateFlow<List<UserVO>>(inUserList)
+    val userList: StateFlow<List<UserVO>> = _userList.asStateFlow()
 
     /**
      * 유저 목록 조회
      */
     fun getUsers(q: String) {
         CoroutineScope(Dispatchers.IO).launch {
-            gitRepositoryImpl.getUsers(q)
-                .catch { exception ->
-                    Log.e("ERROR!!", exception.message.toString())
-                }.collectLatest { response ->
-                    if (response.isSuccessful) {
-                        Log.e("response collect", response.body()?.items.toString())
-                        inUserList = response.body()?.items?.toMutableList()
-                            ?: listOf<UserVO>().toMutableList()
-                    } else {
-                        inUserList = emptyList<UserVO>().toMutableList()
-                    }
-                    withContext(Dispatchers.Main) {
-                        _userList.value = inUserList
-                    }
+            gitRepositoryImpl.getUsers(q).catch { exception ->
+                Log.e("ERROR!!", exception.message.toString())
+            }.collectLatest { response ->
+                Log.e("RES", response.body().toString())
+                if (response.isSuccessful) {
+                    inUserList = response.body()?.items?.toMutableList()
+                        ?: listOf<UserVO>().toMutableList()
+                } else {
+                    inUserList = emptyList<UserVO>().toMutableList()
                 }
+                withContext(Dispatchers.Main) {
+                    _userList.value = inUserList
+                }
+            }
         }
     }
 }
