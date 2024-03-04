@@ -2,13 +2,14 @@ package com.example.networkex.ui
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.paging.PagingDataAdapter
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.example.networkex.databinding.ItemBinding
 import com.example.networkex.model.UserVO
 
-class MainAdapter : ListAdapter<UserVO, MainAdapter.MainViewHolder>(DIFF_UTIL) {
+class MainAdapter : PagingDataAdapter<UserVO, MainAdapter.MainViewHolder>(DIFF_UTIL) {
     companion object {
         val DIFF_UTIL = object : DiffUtil.ItemCallback<UserVO>() {
             override fun areItemsTheSame(oldItem: UserVO, newItem: UserVO): Boolean {
@@ -28,11 +29,14 @@ class MainAdapter : ListAdapter<UserVO, MainAdapter.MainViewHolder>(DIFF_UTIL) {
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): MainViewHolder {
-        val binding = ItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        val binding =
+            ItemBinding.inflate(LayoutInflater.from(parent.context), parent, false)
         return MainViewHolder((binding))
     }
 
     override fun onBindViewHolder(holder: MainViewHolder, position: Int) {
-        holder.bind(getItem(position), position)
+        getItem(position)?.let {
+            holder.bind(it, position)
+        }
     }
 }
